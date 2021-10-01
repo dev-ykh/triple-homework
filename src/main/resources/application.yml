@@ -1,0 +1,30 @@
+server:
+  shutdown: graceful
+
+r2dbc:
+  pool:
+    max-idle-time:
+    max-create-connection-time:
+    max-life:
+    initial-size:
+    max-size:
+  write:
+    host:
+    port:
+    db:
+    username:
+    password:
+  read:
+    host:
+    port:
+    db:
+    username:
+    password:
+
+logging:
+  level:
+    root:
+    org:
+      springframework:
+        data:
+          r2dbc:
