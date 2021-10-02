@@ -7,10 +7,10 @@ import java.util.*
 data class PointsRequest(
     val type: EventType,
     val action: ActionType,
-    val placeId: UUID,
+    val placeId: String,
     val content: String,
-    val attachedPhotoIds: Array<UUID>,
-    val reviewId: UUID
+    val attachedPhotoIds: Array<String>,
+    val reviewId: String
 ) {
     override fun equals(other: Any?): Boolean {
         if (this === other) return true

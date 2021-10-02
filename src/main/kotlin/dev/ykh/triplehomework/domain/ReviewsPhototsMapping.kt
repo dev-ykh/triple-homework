@@ -9,11 +9,16 @@ import java.util.*
 @Table("reviews_photots_mapping")
 data class ReviewsPhototsMapping(
     val reviewId: Long,
-    val photoId: Long
+
+    val photoId: Long,
+
+    val isDeleted: Boolean
 ) {
 
     @Id
-    var id: UUID? = null
+    var id: String? = null
 
     var createdAt: ZonedDateTime? = null
+
+    var updatedAt: ZonedDateTime? = null
 }

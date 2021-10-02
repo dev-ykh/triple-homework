@@ -8,12 +8,17 @@ import java.util.*
 
 @Table("places_reviews_mapping")
 data class PlacesReviewsMapping(
-    val placeId: UUID,
-    val reviewId: UUID
+    val placeId: String,
+
+    val reviewId: String,
+
+    val isDeleted: Boolean
 ) {
 
     @Id
-    var id: UUID? = null
+    var id: String? = null
 
     var createdAt: ZonedDateTime? = null
+
+    var updatedAt: ZonedDateTime? = null
 }

@@ -24,50 +24,40 @@ class PointsHandler(
      */
     suspend fun get(req: ServerRequest): ServerResponse {
 
-        val userId = UUID.fromString(req.pathVariable("userId"))
-        val pointView = PointsView(userId)
-
-        pointsService.getPointsByUserId(userId)
-            ?.collect {
-                pointView.pointList.add(PointsSubView(it.point, it.createdAt))
-                pointView.totalPoints += it.point
-            }
-
-        return ok().json().bodyValueAndAwait(Result(pointView))
+        val userId = req.pathVariable("userId")
+        return ok().json().bodyValueAndAwait(
+            Result(pointsService.getPointsByUserId(userId))
+        )
     }
 
     /**
-     * 포인트 적립
+     * 포인트 적립 (회수 포함)
      */
-    suspend fun save(req: ServerRequest): ServerResponse {
-        val userId = UUID.fromString(req.pathVariable("userId"))
-
+    suspend fun saveAndReturn(req: ServerRequest): ServerResponse {
+        val userId = req.pathVariable("userId")
         val pointsRequest = req.awaitBody<PointsRequest>()
-        val pointsView = PointsView(userId)
 
-        //TODO : 글자가 1자 이상이면 1점
-        //TODO : 그림이 1장 이상이면 1점
-        //TODO : 특정 장소에서 처음이면 1점
         //TODO : JWT 인증 넣기
         when(pointsRequest.action) {
-            //추가
+            //추가 엑션
             ActionType.ADD -> {
-                pointsService.add(userId, pointsRequest)?.collect {
-                    pointsView.pointList.add(PointsSubView(it.point, it.createdAt))
-                    pointsView.totalPoints += it.point
-                }
+                pointsService.add(userId, pointsRequest)
             }
-            //수정
+            //수정 엑션
             ActionType.MOD -> {
-                println(1)
+                pointsService.mod(userId, pointsRequest)
             }
-            //삭제
+            //삭제 엑션
             ActionType.DELETE -> {
-                println(1)
+                pointsService.delete(userId, pointsRequest)
             }
-            else -> println(1)
+            else -> {
+                throw Exception("ActionType is not set")
+            }
         }
 
-        return ok().json().bodyValueAndAwait(Result(pointsView))
+        return ok().json().bodyValueAndAwait(
+            Result(pointsService.getPointsByUserId(userId))
+        )
     }
 }

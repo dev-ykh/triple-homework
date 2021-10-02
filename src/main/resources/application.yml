@@ -1,30 +1,37 @@
 server:
   shutdown: graceful
+  port: 8081
 
+spring:
+  main:
+    allow-bean-definition-overriding: true
+
+# 원칙적으로는 DB 정보를 암호화 내지 동적으로 클라우드를 통해 받아와야 하지만 과제 진행의 특성상 plain text로 관리
 r2dbc:
   pool:
-    max-idle-time:
-    max-create-connection-time:
-    max-life:
-    initial-size:
-    max-size:
-  write:
-    host:
-    port:
-    db:
-    username:
-    password:
-  read:
-    host:
-    port:
-    db:
-    username:
-    password:
+    max-idle-time: 30
+    max-create-connection-time: 30
+    max-life: 30
+    initial-size: 20
+    max-size: 30
+    host: localhost
+    port: 3306
+    db: triple
+    username: root
+    password: secret
 
 logging:
   level:
-    root:
+    root: info
     org:
       springframework:
         data:
-          r2dbc:
+          r2dbc: info
+
+add:
+  contents:
+    points: 1
+  photots:
+    points: 1
+  firstreivew:
+    points: 1

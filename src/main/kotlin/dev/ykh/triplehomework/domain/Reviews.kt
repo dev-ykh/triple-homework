@@ -8,13 +8,16 @@ import java.util.*
 
 @Table("reviews")
 data class Reviews(
+
+    val userId: String,
+
     val contents: String,
 
     val isDeleted: Boolean = false,
 ) {
 
     @Id
-    var id: UUID? = null
+    var id: String? = null
 
     var createdAt: ZonedDateTime? = null
 

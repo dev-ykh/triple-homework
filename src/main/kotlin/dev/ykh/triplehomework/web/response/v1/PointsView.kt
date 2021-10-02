@@ -5,7 +5,7 @@ import java.time.ZonedDateTime
 import java.util.*
 
 data class PointsView(
-    val userId: UUID,
+    val userId: String,
 ) {
     var totalPoints: Int = 0
     val pointList: MutableList<PointsSubView> = mutableListOf()

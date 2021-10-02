@@ -14,7 +14,7 @@ data class Places(
 ) {
 
     @Id
-    var id: UUID? = null
+    var id: String? = null
 
     var createdAt: ZonedDateTime? = null
 

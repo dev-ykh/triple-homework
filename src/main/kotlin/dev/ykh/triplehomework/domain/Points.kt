@@ -1,5 +1,6 @@
 package dev.ykh.triplehomework.domain
 
+import dev.ykh.triplehomework.domain.common.EventDetailType
 import dev.ykh.triplehomework.domain.common.EventType
 import org.springframework.data.annotation.Id
 import org.springframework.data.relational.core.mapping.Table
@@ -8,21 +9,21 @@ import java.util.*
 
 @Table("points")
 data class Points(
-    val userId: UUID,
+    val userId: String,
 
-    val point: Int,
+    var point: Int,
 
     val type: EventType,
 
-    val isDeleted: Boolean = false,
+    var detailType: EventDetailType,
 
-    val reviewId: UUID  //포인트 획득은 리뷰만으로 되지는 않을텐데;;;
+    val placeId: String,
+
+    val reviewId: String
 ) {
 
     @Id
-    var id: UUID? = null
+    var id: String? = null
 
     var createdAt: ZonedDateTime? = null
-
-    var updatedAt: ZonedDateTime? = null
 }
