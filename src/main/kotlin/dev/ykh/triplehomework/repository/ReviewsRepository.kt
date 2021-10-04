@@ -9,6 +9,6 @@ import org.springframework.stereotype.Repository
 import java.util.*
 
 @Repository
-interface ReviewsRepository: CoroutineCrudRepository<Reviews, Long> {
+interface ReviewsRepository: CoroutineCrudRepository<Reviews, String> {
 
 }

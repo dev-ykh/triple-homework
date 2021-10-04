@@ -1,4 +1,4 @@
-package dev.ykh.triplehomework.web.response.v1
+package dev.ykh.triplehomework.web.v1.response
 
 import com.fasterxml.jackson.annotation.JsonInclude
 

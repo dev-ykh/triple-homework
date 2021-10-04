@@ -1,8 +1,7 @@
-package dev.ykh.triplehomework.web.response.v1
+package dev.ykh.triplehomework.web.v1.response
 
-import dev.ykh.triplehomework.domain.Points
+import dev.ykh.triplehomework.domain.common.EventDetailType
 import java.time.ZonedDateTime
-import java.util.*
 
 data class PointsView(
     val userId: String,
@@ -13,5 +12,6 @@ data class PointsView(
 
 data class PointsSubView(
     val point: Int = 0,
+    val type: EventDetailType? = null,
     var createdAt: ZonedDateTime? = null
 )

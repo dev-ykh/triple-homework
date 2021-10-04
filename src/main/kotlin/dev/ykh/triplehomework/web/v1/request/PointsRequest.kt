@@ -1,8 +1,7 @@
-package dev.ykh.triplehomework.web.request.v1
+package dev.ykh.triplehomework.web.v1.request
 
 import dev.ykh.triplehomework.domain.common.ActionType
 import dev.ykh.triplehomework.domain.common.EventType
-import java.util.*
 
 data class PointsRequest(
     val type: EventType,

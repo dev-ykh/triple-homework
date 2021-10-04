@@ -8,8 +8,8 @@ import org.springframework.stereotype.Repository
 import java.util.*
 
 @Repository
-interface PlacesReviewsRepository: CoroutineCrudRepository<PlacesReviewsMapping, Long> {
+interface PlacesReviewsRepository: CoroutineCrudRepository<PlacesReviewsMapping, String> {
 
-    suspend fun findByPlaceIdAndDeletedOrderByCreatedAtAsc(placeId: String, isDeleted: Boolean): PlacesReviewsMapping?
+    suspend fun findTopByPlaceIdAndIsDeletedOrderByCreatedAtAsc(placeId: String, isDeleted: Boolean): PlacesReviewsMapping?
 
 }

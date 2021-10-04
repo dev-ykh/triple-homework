@@ -1,6 +1,7 @@
 package dev.ykh.triplehomework.domain
 
 import dev.ykh.triplehomework.domain.common.EventType
+import dev.ykh.triplehomework.utils.getUUID
 import org.springframework.data.annotation.Id
 import org.springframework.data.relational.core.mapping.Table
 import java.time.ZonedDateTime
@@ -14,7 +15,7 @@ data class Places(
 ) {
 
     @Id
-    var id: String? = null
+    var id: String? = getUUID()
 
     var createdAt: ZonedDateTime? = null
 

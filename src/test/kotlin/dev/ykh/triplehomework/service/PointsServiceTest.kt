@@ -8,7 +8,7 @@ import dev.ykh.triplehomework.domain.common.EventType
 import dev.ykh.triplehomework.repository.PlacesReviewsRepository
 import dev.ykh.triplehomework.repository.PointsRepository
 import dev.ykh.triplehomework.repository.ReviewsPhototsRepository
-import dev.ykh.triplehomework.web.request.v1.PointsRequest
+import dev.ykh.triplehomework.web.v1.request.PointsRequest
 import io.mockk.MockKAnnotations
 import io.mockk.coEvery
 import io.mockk.coVerify
@@ -37,6 +37,7 @@ class PointsServiceTest {
     private lateinit var placeId: String
     private lateinit var reviewId: String
     private lateinit var points: List<Points>
+    private val pointsDeleted: MutableList<Points> = mutableListOf()
 
     @BeforeEach
     fun setUp() {
@@ -48,23 +49,15 @@ class PointsServiceTest {
         reviewId = "734fedae-df7b-4968-9006-6362e80e0618"
 
         points = listOf(
-            Points(
-                userId,
-                1,
-                EventType.REVIEW,
-                EventDetailType.ADD_CONTENTS,
-                placeId,
-                reviewId
-            ),
-            Points(
-                userId,
-                1,
-                EventType.REVIEW,
-                EventDetailType.ADD_PHOTOS,
-                placeId,
-                reviewId
-            )
+            Points(userId, 1, EventType.REVIEW, EventDetailType.ADD_CONTENTS, placeId, reviewId),
+            Points(userId, 1, EventType.REVIEW, EventDetailType.ADD_PHOTOS, placeId, reviewId)
         )
+
+        points.forEach {
+            pointsDeleted.add(
+                Points(it.userId, -it.point, it.type, EventDetailType.REMOVE_REVIEW, placeId, reviewId)
+            )
+        }
     }
 
     @Test
@@ -79,7 +72,7 @@ class PointsServiceTest {
     }
 
     @Test
-    fun `리뷰 등록 시 포인트 적입_글자`() = runBlockingTest {
+    fun `리뷰 등록 시 포인트 적립_글자`() = runBlockingTest {
         mockingRepository(userId, "withFirst")
         val pointsRequest = PointsRequest(
             type = EventType.REVIEW,
@@ -92,11 +85,12 @@ class PointsServiceTest {
         pointsService.add(userId, pointsRequest)
         coVerify { pointsRepository.countByUserIdAndPlaceIdAndDetailType(userId, placeId, EventDetailType.ADD_CONTENTS) }
         coVerify { pointsRepository.countByUserIdAndPlaceIdAndDetailType(userId, placeId, EventDetailType.ADD_FIRST_REVIEW) }
-        coVerify { placesReviewsRepository.findByPlaceIdAndDeletedOrderByCreatedAtAsc(placeId, false) }
+        coVerify { placesReviewsRepository.findTopByPlaceIdAndIsDeletedOrderByCreatedAtAsc(placeId, false) }
+        coVerify { pointsRepository.save(any()) }
     }
 
     @Test
-    fun `리뷰 등록 시 포인트 적입_사진`() = runBlockingTest {
+    fun `리뷰 등록 시 포인트 적립_사진`() = runBlockingTest {
         mockingRepository(userId, "withPhotoAndFirst")
         val pointsRequest = PointsRequest(
             type = EventType.REVIEW,
@@ -110,66 +104,125 @@ class PointsServiceTest {
         coVerify { pointsRepository.countByUserIdAndPlaceIdAndDetailType(userId, placeId, EventDetailType.ADD_CONTENTS) }
         coVerify { pointsRepository.countByUserIdAndPlaceIdAndDetailType(userId, placeId, EventDetailType.ADD_PHOTOS) }
         coVerify { pointsRepository.countByUserIdAndPlaceIdAndDetailType(userId, placeId, EventDetailType.ADD_FIRST_REVIEW) }
-        coVerify { placesReviewsRepository.findByPlaceIdAndDeletedOrderByCreatedAtAsc(placeId, false) }
+        coVerify { placesReviewsRepository.findTopByPlaceIdAndIsDeletedOrderByCreatedAtAsc(placeId, false) }
+        coVerify { pointsRepository.save(any()) }
     }
 
     @Test
-    fun `UUID`() = runBlockingTest {
-        println(UUID.randomUUID())
-        println(UUID.randomUUID())
-        println(UUID.randomUUID())
+    fun `리뷰 등록 시 포인트 적립_첫리뷰`() = runBlockingTest {
+        mockingRepository(userId, "withFirst")
+        val pointsRequest = PointsRequest(
+            type = EventType.REVIEW,
+            action = ActionType.ADD,
+            placeId = placeId,
+            content = "정말 멋진 곳입니다.",
+            attachedPhotoIds = emptyArray(),
+            reviewId = reviewId
+        )
+        pointsService.add(userId, pointsRequest)
+        coVerify { pointsRepository.countByUserIdAndPlaceIdAndDetailType(userId, placeId, EventDetailType.ADD_CONTENTS) }
+        coVerify { pointsRepository.countByUserIdAndPlaceIdAndDetailType(userId, placeId, EventDetailType.ADD_FIRST_REVIEW) }
+        coVerify { placesReviewsRepository.findTopByPlaceIdAndIsDeletedOrderByCreatedAtAsc(placeId, false) }
+        coVerify { pointsRepository.save(any()) }
     }
+
+    @Test
+    fun `리뷰 수정 시 포인트 적립`() = runBlockingTest {
+        mockingRepository(userId, "onlyPhotoAdd")
+        val pointsRequest = PointsRequest(
+            type = EventType.REVIEW,
+            action = ActionType.MOD,
+            placeId = placeId,
+            content = "정말 멋진 곳입니다.",
+            attachedPhotoIds = arrayOf("ceb98c86-f11e-4e08-8997-82fecccc9e11", "ceb22486-f11e-4e08-8997-82fecccc9e23"),
+            reviewId = reviewId
+        )
+        pointsService.mod(userId, pointsRequest)
+        coVerify { pointsRepository.countByUserIdAndPlaceIdAndDetailType(userId, placeId, EventDetailType.ADD_PHOTOS) }
+        coVerify { reviewsPhototsRepository.countByReviewIdAndIsDeleted(reviewId, false) }
+        coVerify { pointsRepository.save(any()) }
+    }
+
+    @Test
+    fun `리뷰 수정 시 포인트 회수`() = runBlockingTest {
+        mockingRepository(userId, "onlyPhotoRemove")
+        val pointsRequest = PointsRequest(
+            type = EventType.REVIEW,
+            action = ActionType.MOD,
+            placeId = placeId,
+            content = "정말 멋진 곳입니다.",
+            attachedPhotoIds = emptyArray(),
+            reviewId = reviewId
+        )
+        pointsService.mod(userId, pointsRequest)
+        coVerify { pointsRepository.countByUserIdAndPlaceIdAndDetailType(userId, placeId, EventDetailType.REMOVE_PHOTOS) }
+        coVerify { reviewsPhototsRepository.countByReviewIdAndIsDeleted(reviewId, false) }
+        coVerify { pointsRepository.save(any()) }
+    }
+
+    @Test
+    fun `리뷰 삭제`() = runBlockingTest {
+        mockingRepository(userId, "deleteReview")
+        val pointsRequest = PointsRequest(
+            type = EventType.REVIEW,
+            action = ActionType.DELETE,
+            placeId = placeId,
+            content = "",
+            attachedPhotoIds = emptyArray(),
+            reviewId = reviewId
+        )
+        pointsService.delete(userId, pointsRequest)
+        coVerify { pointsRepository.countByUserIdAndPlaceIdAndDetailType(userId, placeId, EventDetailType.REMOVE_REVIEW) }
+        coVerify { pointsRepository.findAllByUserIdAndPlaceId(userId, placeId) }
+        coVerify { pointsRepository.save(any()) }
+    }
+
+//    @Test
+//    fun `UUID`() = runBlockingTest {
+//        println(UUID.randomUUID())
+//        println(UUID.randomUUID())
+//        println(UUID.randomUUID())
+//    }
 
     private fun mockingRepository(userId: String, type: String) {
 
-        val pointsContentAndFirst = mutableListOf<Points>(
-            Points(
-                userId,
-                1,
-                EventType.REVIEW,
-                EventDetailType.ADD_CONTENTS,
-                placeId,
-                reviewId
-            )
+        val pointsList = mutableListOf<Points>(
+            Points(userId, 1, EventType.REVIEW, EventDetailType.ADD_CONTENTS, placeId, reviewId)
         )
-
-        if(type == "withPhotoAndFirst") {
-            pointsContentAndFirst.add(Points(
-                userId,
-                1,
-                EventType.REVIEW,
-                EventDetailType.ADD_PHOTOS,
-                placeId,
-                reviewId
-            ))
-            pointsContentAndFirst.add(Points(
-                userId,
-                1,
-                EventType.REVIEW,
-                EventDetailType.ADD_FIRST_REVIEW,
-                placeId,
-                reviewId
-            ))
-        }
-
-        if(type == "withFirst") {
-            pointsContentAndFirst.add(Points(
-                userId,
-                1,
-                EventType.REVIEW,
-                EventDetailType.ADD_FIRST_REVIEW,
-                placeId,
-                reviewId
-            ))
+        when(type) {
+            "withPhotoAndFirst" -> {
+                pointsList.addAll(
+                    mutableListOf(
+                        Points(userId, 1, EventType.REVIEW, EventDetailType.ADD_PHOTOS, placeId, reviewId),
+                        Points(userId, 1, EventType.REVIEW, EventDetailType.ADD_FIRST_REVIEW, placeId, reviewId)
+                    )
+                )
+            }
+            "withFirst" -> {
+                pointsList.add(Points(userId, 1, EventType.REVIEW, EventDetailType.ADD_FIRST_REVIEW, placeId, reviewId))
+            }
+            "onlyPhotoAdd" -> {
+                val point = Points(userId, 1, EventType.REVIEW, EventDetailType.ADD_PHOTOS, placeId, reviewId)
+                coEvery { reviewsPhototsRepository.countByReviewIdAndIsDeleted(reviewId, false) } returns 0L
+            }
+            "onlyPhotoRemove" -> {
+                val point = Points(userId, -1, EventType.REVIEW, EventDetailType.REMOVE_PHOTOS, placeId, reviewId)
+                coEvery { reviewsPhototsRepository.countByReviewIdAndIsDeleted(reviewId, false) } returns 0L
+            }
+            "deleteReview" -> {
+                coEvery { pointsRepository.findAllByUserIdAndPlaceId(userId, placeId) } returns points.asFlow()
+            }
         }
 
         val placesReviews = PlacesReviewsMapping(placeId, reviewId, false)
 
+        coEvery { pointsRepository.save(any()) } returns Unit
         coEvery { pointsRepository.findAllByUserId(userId) } returns points.asFlow()
-        coEvery { pointsRepository.saveAll(pointsContentAndFirst) } returns pointsContentAndFirst.asFlow()
         coEvery { pointsRepository.countByUserIdAndPlaceIdAndDetailType(userId, placeId, EventDetailType.ADD_CONTENTS) } returns 0L
         coEvery { pointsRepository.countByUserIdAndPlaceIdAndDetailType(userId, placeId, EventDetailType.ADD_PHOTOS) } returns 0L
         coEvery { pointsRepository.countByUserIdAndPlaceIdAndDetailType(userId, placeId, EventDetailType.ADD_FIRST_REVIEW) } returns 0L
-        coEvery { placesReviewsRepository.findByPlaceIdAndDeletedOrderByCreatedAtAsc(placeId, false) } returns placesReviews
+        coEvery { pointsRepository.countByUserIdAndPlaceIdAndDetailType(userId, placeId, EventDetailType.REMOVE_PHOTOS) } returns 0L
+        coEvery { pointsRepository.countByUserIdAndPlaceIdAndDetailType(userId, placeId, EventDetailType.REMOVE_REVIEW) } returns 0L
+        coEvery { placesReviewsRepository.findTopByPlaceIdAndIsDeletedOrderByCreatedAtAsc(placeId, false) } returns placesReviews
     }
 }
