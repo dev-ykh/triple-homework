@@ -16,9 +16,9 @@ r2dbc:
     max-size: 30
     host: localhost
     port: 3306
-    db: triple
-    username: root
-    password: secret
+    db:
+    username:
+    password:
 
 logging:
   level:
