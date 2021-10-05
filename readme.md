@@ -30,23 +30,43 @@
    ```
    [method] GET
    [url] /v1/points/{userId}
-   [request body]
-      - type
-      - action
-      - placeId
-      - content
-      - attachedPhotoIds
-      - reviewId
+   
    [response]
-      - data
-        - userId
-        - totalPoints
-        - pointList
-          - point
-          - type
-          - createdAt
-      - code
-      - description
+      - data       /* response data */
+        - userId   /* 유저 ID */
+        - totalPoints /* 총 포인트 점수 */
+        - pointList   /* 포인트 List */
+          - point     /* 포인트 점수 */
+          - type      /* 포인트 적립 및 회수 타입 */
+          - createdAt /* 생성일시 */
+      - code          /* response code */
+      - description   /* response 설명 */
+   [response 예시]
+      {
+        "data": {
+            "userId": "4e71407b-55c9-4c76-b050-261fb55ac85e",
+            "totalPoints": 3,
+            "pointList": [
+                {
+                    "point": 1,
+                    "type": "ADD_PHOTOS",
+                    "createdAt": "2021-10-04 06:19:23"
+                },
+                {
+                    "point": 1,
+                    "type": "ADD_FIRST_REVIEW",
+                    "createdAt": "2021-10-04 06:19:23"
+                },
+                {
+                    "point": 1,
+                    "type": "ADD_CONTENTS",
+                    "createdAt": "2021-10-04 06:19:23"
+                }
+            ]
+        },
+        "code": 0,
+        "description": "정상 처리 되었습니다."
+      }
    ```
 
 - 포인트 적립
