@@ -10,6 +10,8 @@
   * Spring DATA R2DBC
 * MySql 5.7
   * jasync mysql 1.1.7
+* Test
+  * mockk 1.10.5
 * gradle wrapper 7.2
 
 ### 빌드 및 실행 방법
