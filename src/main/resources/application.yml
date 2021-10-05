@@ -1,6 +1,5 @@
 server:
   shutdown: graceful
-  port: 8081
 
 spring:
   main:
