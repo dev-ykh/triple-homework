@@ -8,18 +8,19 @@ import dev.ykh.triplehomework.domain.common.EventType
 import dev.ykh.triplehomework.repository.PlacesReviewsRepository
 import dev.ykh.triplehomework.repository.PointsRepository
 import dev.ykh.triplehomework.repository.ReviewsPhototsRepository
+import dev.ykh.triplehomework.service.v1.PointsService
 import dev.ykh.triplehomework.web.v1.request.PointsRequest
-import io.mockk.MockKAnnotations
-import io.mockk.coEvery
-import io.mockk.coVerify
+import io.mockk.*
 import io.mockk.junit5.MockKExtension
-import io.mockk.mockk
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.asFlow
 import kotlinx.coroutines.test.runBlockingTest
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.extension.ExtendWith
+import org.springframework.transaction.ReactiveTransaction
+import org.springframework.transaction.reactive.TransactionalOperator
+import org.springframework.transaction.reactive.executeAndAwait
 import kotlin.test.assertEquals
 import kotlin.test.assertNotNull
 
@@ -41,6 +42,7 @@ class PointsServiceTest {
     @BeforeEach
     fun setUp() {
         MockKAnnotations.init(this)
+
         this.pointsService = PointsService(pointsRepository, placesReviewsRepository, reviewsPhototsRepository,
             1,1,1)
         userId = "6b056865-ca6c-4125-988c-f34412e4a880"

@@ -1,19 +1,19 @@
-package dev.ykh.triplehomework.service
+package dev.ykh.triplehomework.service.v1
 
 import dev.ykh.triplehomework.domain.Points
+import dev.ykh.triplehomework.domain.common.EtcValue.ZERO
 import dev.ykh.triplehomework.domain.common.EventDetailType
 import dev.ykh.triplehomework.repository.PlacesReviewsRepository
 import dev.ykh.triplehomework.repository.PointsRepository
 import dev.ykh.triplehomework.repository.ReviewsPhototsRepository
-import dev.ykh.triplehomework.utils.getUUID
 import dev.ykh.triplehomework.web.v1.request.PointsRequest
 import dev.ykh.triplehomework.web.v1.response.PointsSubView
 import dev.ykh.triplehomework.web.v1.response.PointsView
 import kotlinx.coroutines.flow.*
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.stereotype.Service
-import org.springframework.transaction.annotation.Transactional
-import java.util.*
+import org.springframework.transaction.reactive.TransactionalOperator
+import org.springframework.transaction.reactive.executeAndAwait
 
 @Service
 class PointsService(
@@ -24,8 +24,6 @@ class PointsService(
     @Value("\${add.photots.points}") val addPhototsPoints: Int,
     @Value("\${add.firstreivew.points}") val addFirstReviewPoints: Int
 ) {
-
-    private val zero = 0L
 
     /**
      * 특정 유저의 포인트 이력 조회
@@ -44,7 +42,6 @@ class PointsService(
     /**
      * 특정 유저의 리뷰 등록으로 인한 포인트 이력 추가
      */
-    @Transactional
     suspend fun add(userId: String, pointsRequest: PointsRequest) {
 
         val points = mutableListOf<Points>()
@@ -52,7 +49,7 @@ class PointsService(
         //글자 입력
         //더불어 이전에 해당 place에서 본인이 포인트를 받은 이력이 있는지 확인
         if(pointsRequest.content.isNotEmpty() &&
-            pointsRepository.countByUserIdAndPlaceIdAndDetailType(userId, pointsRequest.placeId, EventDetailType.ADD_CONTENTS) == zero) {
+            pointsRepository.countByUserIdAndPlaceIdAndDetailType(userId, pointsRequest.placeId, EventDetailType.ADD_CONTENTS) == ZERO) {
 
             points.add(
                 Points(userId, addContentsPoints, pointsRequest.type, EventDetailType.ADD_CONTENTS, pointsRequest.placeId,
@@ -63,7 +60,7 @@ class PointsService(
         //사진 입력
         //더불어 이전에 해당 place에서 본인이 포인트를 받은 이력이 있는지 확인
         if(pointsRequest.attachedPhotoIds.isNotEmpty() &&
-            pointsRepository.countByUserIdAndPlaceIdAndDetailType(userId, pointsRequest.placeId, EventDetailType.ADD_PHOTOS) == zero) {
+            pointsRepository.countByUserIdAndPlaceIdAndDetailType(userId, pointsRequest.placeId, EventDetailType.ADD_PHOTOS) == ZERO) {
 
             points.add(
                 Points(userId, addPhototsPoints, pointsRequest.type, EventDetailType.ADD_PHOTOS, pointsRequest.placeId,
@@ -77,7 +74,7 @@ class PointsService(
         //더불어 이전에 해당 이유로 본인이 포인트를 받은 이력이 있는지 확인
         if(placesReviewsRepository.findTopByPlaceIdAndIsDeletedOrderByCreatedAtAsc(pointsRequest.placeId, false)
                 ?.reviewId == pointsRequest.reviewId &&
-            pointsRepository.countByUserIdAndPlaceIdAndDetailType(userId, pointsRequest.placeId, EventDetailType.ADD_FIRST_REVIEW) == zero) {
+            pointsRepository.countByUserIdAndPlaceIdAndDetailType(userId, pointsRequest.placeId, EventDetailType.ADD_FIRST_REVIEW) == ZERO) {
 
             points.add(
                 Points(userId, addFirstReviewPoints, pointsRequest.type, EventDetailType.ADD_FIRST_REVIEW, pointsRequest.placeId,
@@ -85,8 +82,8 @@ class PointsService(
             )
         }
 
-        points.forEach {
-            pointsRepository.save(it)
+        points.forEach { point ->
+            pointsRepository.save(point)
         }
     }
 
@@ -99,15 +96,15 @@ class PointsService(
         if(pointsRequest.attachedPhotoIds.isEmpty()) {
             //매핑이 끊겼는지 다시 확인
             //더불어 과거에 해당 리뷰에서 사진 삭제로 포인트 회수를 받은 이력이 있는지 확인 없는 경우에만 insert
-            if(reviewsPhototsRepository.countByReviewIdAndIsDeleted(pointsRequest.reviewId, false) == zero &&
-                pointsRepository.countByUserIdAndPlaceIdAndDetailType(userId, pointsRequest.placeId, EventDetailType.REMOVE_PHOTOS) == zero) {
+            if(reviewsPhototsRepository.countByReviewIdAndIsDeleted(pointsRequest.reviewId, false) == ZERO &&
+                pointsRepository.countByUserIdAndPlaceIdAndDetailType(userId, pointsRequest.placeId, EventDetailType.REMOVE_PHOTOS) == ZERO) {
                 Points(userId, -addPhototsPoints, pointsRequest.type, EventDetailType.REMOVE_PHOTOS, pointsRequest.placeId, pointsRequest.reviewId)
             } else { null }
         } else {
             //같은 place에서 이전에 사진 등록으로 포인트를 본인이 받았던 이력이 있는지 확인 (중복 지급 방지)
             //더불어 현재 리뷰글로 매핑된 사진이 없는 경우에만 포인트 지급을 한다.
-            if(pointsRepository.countByUserIdAndPlaceIdAndDetailType(userId, pointsRequest.placeId, EventDetailType.ADD_PHOTOS) == zero &&
-                reviewsPhototsRepository.countByReviewIdAndIsDeleted(pointsRequest.reviewId, false) == zero) {
+            if(pointsRepository.countByUserIdAndPlaceIdAndDetailType(userId, pointsRequest.placeId, EventDetailType.ADD_PHOTOS) == ZERO &&
+                reviewsPhototsRepository.countByReviewIdAndIsDeleted(pointsRequest.reviewId, false) == ZERO) {
                 Points(userId, addPhototsPoints, pointsRequest.type, EventDetailType.ADD_PHOTOS, pointsRequest.placeId, pointsRequest.reviewId)
             } else { null }
         }?.let {
@@ -121,18 +118,18 @@ class PointsService(
     suspend fun delete(userId: String, pointsRequest: PointsRequest) {
 
         //리뷰 삭제를 여러번 반복했을때 포인트 회수 이력이 중복으로 들어가지 않도록 하기 위해 리뷰 삭제로 인한 회수 이력이 기 존재하는지 파악
-        if(pointsRepository.countByUserIdAndPlaceIdAndDetailType(userId, pointsRequest.placeId, EventDetailType.REMOVE_REVIEW) == zero) {
+        if(pointsRepository.countByUserIdAndPlaceIdAndDetailType(userId, pointsRequest.placeId, EventDetailType.REMOVE_REVIEW) == ZERO) {
             val points = pointsRepository.findAllByUserIdAndPlaceId(userId, pointsRequest.placeId)
-            val pointsEntities = mutableListOf<Points>()
+            val pointsList = mutableListOf<Points>()
 
             //이전에 리뷰 삭제를 여러번 반복했을때 포인트 회수 이력이 중복으로 들어가지 않도록 하기 위해 회수 이력이 기 존재하는지 파악
             points?.collect {
-                pointsEntities.add(
+                pointsList.add(
                     Points(it.userId, -it.point, it.type, EventDetailType.REMOVE_REVIEW, pointsRequest.placeId, pointsRequest.reviewId)
                 )
             }
-            pointsEntities.forEach {
-                pointsRepository.save(it)
+            pointsList.forEach { point ->
+                pointsRepository.save(point)
             }
         }
     }

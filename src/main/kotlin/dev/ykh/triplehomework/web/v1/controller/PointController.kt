@@ -1,7 +1,7 @@
 package dev.ykh.triplehomework.web.v1.controller
 
 import dev.ykh.triplehomework.domain.common.ActionType
-import dev.ykh.triplehomework.service.PointsService
+import dev.ykh.triplehomework.service.v1.PointsService
 import dev.ykh.triplehomework.web.v1.request.PointsRequest
 import dev.ykh.triplehomework.web.v1.response.PointsView
 import dev.ykh.triplehomework.web.v1.response.Result

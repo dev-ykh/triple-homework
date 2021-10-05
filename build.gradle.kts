@@ -4,13 +4,10 @@ plugins {
     val kotlinVersion = "1.4.30"
     id("org.springframework.boot") version "2.4.5"
     id("io.spring.dependency-management") version "1.0.11.RELEASE"
-    id("com.palantir.docker") version "0.22.1"
     id("com.google.cloud.tools.jib") version "1.6.0"
-    id("org.asciidoctor.convert") version "2.4.0"
     kotlin("jvm") version kotlinVersion
     kotlin("plugin.spring") version kotlinVersion
     kotlin("kapt") version kotlinVersion
-    jacoco
 }
 
 group = "dev.ykh"
@@ -37,11 +34,6 @@ dependencyManagement {
 repositories {
     mavenCentral()
     gradlePluginPortal()
-
-    jacoco {
-        // JaCoCo 버전
-        toolVersion = "0.8.6"
-    }
 
     dependencies {
         implementation("org.springframework.boot:spring-boot-starter-webflux")
@@ -73,7 +65,6 @@ repositories {
         testImplementation("org.jetbrains.kotlin:kotlin-test:$kotlinVersion")
         testImplementation("org.jetbrains.kotlin:kotlin-test-junit:$kotlinVersion")
         testImplementation("io.mockk:mockk:$mockkVersion")
-        asciidoctor("org.springframework.restdocs:spring-restdocs-asciidoctor:$asciidoctorVersion")
     }
 
     tasks.withType<KotlinCompile> {
@@ -86,26 +77,5 @@ repositories {
     tasks.test {
         useJUnitPlatform()
         outputs.dir(snippetsDir)
-    }
-
-    tasks.asciidoctor {
-        inputs.dir(snippetsDir)
-
-        dependsOn(tasks.test)
-
-        doFirst {
-            println("===== start asciidoctor")
-            delete {
-                file("build/resources/main/static/${project.name}")
-            }
-        }
-
-        doLast {
-            println("===== finish asciidoctor")
-            copy {
-                from("build/asciidoc/html5")
-                into("build/resources/main/static/${project.name}")
-            }
-        }
     }
 }
